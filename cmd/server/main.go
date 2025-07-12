@@ -23,36 +23,31 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net"
 	"os"
 
-	"github.com/redis/go-redis/v9"
-	pb "github.com/evisdrenova/ember-server/pkg/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/evisdrenova/ember-server/internal/handler"
 )
 
 func main() {
 	// ----------------------------------------------------------------
 	// 1. Configuration
 	// ----------------------------------------------------------------
-	redisAddr := getenv("REDIS_ADDR", "localhost:6379")
+	// redisAddr := getenv("REDIS_ADDR", "localhost:6379")
 
 	// ----------------------------------------------------------------
 	// 2. External Clients (Redis, LLM/TTS soon)
 	// ----------------------------------------------------------------
-	rdb := redis.NewClient(&redis.Options{
-		Addr:         redisAddr,
-		MinIdleConns: 4,
-	})
-	if _, err := rdb.Ping(context.Background()).Result(); err != nil {
-		log.Fatalf("redis ping: %v", err)
-	}
+	// rdb := redis.NewClient(&redis.Options{
+	// 	Addr:         redisAddr,
+	// 	MinIdleConns: 4,
+	// })
+	// if _, err := rdb.Ping(context.Background()).Result(); err != nil {
+	// 	log.Fatalf("redis ping: %v", err)
+	// }
 
 	// ----------------------------------------------------------------
 	// 3. gRPC Server setup
@@ -79,7 +74,7 @@ func main() {
 	// ----------------------------------------------------------------
 	// 4. Register service implementation
 	// ----------------------------------------------------------------
-	pb.RegisterAssistantServiceServer(srv, handler.NewChatHandler(rdb))
+	// pb.RegisterAssistantServiceServer(srv, handler.NewChatHandler(rdb))
 
 	// ----------------------------------------------------------------
 	// 5. Listen and serve
