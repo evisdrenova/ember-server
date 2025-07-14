@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: assistant.proto
+// source: pkg/proto/assistant/v1/assistant.proto
 
 package proto
 
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AssistantService_Chat_FullMethodName = "/assistant.AssistantService/Chat"
+	AssistantService_Chat_FullMethodName = "/assistant.v1.AssistantService/Chat"
 )
 
 // AssistantServiceClient is the client API for AssistantService service.
@@ -100,7 +100,7 @@ type AssistantService_ChatServer = grpc.BidiStreamingServer[ChatRequest, ChatRes
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AssistantService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "assistant.AssistantService",
+	ServiceName: "assistant.v1.AssistantService",
 	HandlerType: (*AssistantServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
@@ -111,5 +111,5 @@ var AssistantService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "assistant.proto",
+	Metadata: "pkg/proto/assistant/v1/assistant.proto",
 }

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: assistant.proto
+// source: pkg/proto/assistant/v1/assistant.proto
 
 package proto
 
@@ -32,7 +32,7 @@ type ChatRequest struct {
 
 func (x *ChatRequest) Reset() {
 	*x = ChatRequest{}
-	mi := &file_assistant_proto_msgTypes[0]
+	mi := &file_pkg_proto_assistant_v1_assistant_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *ChatRequest) String() string {
 func (*ChatRequest) ProtoMessage() {}
 
 func (x *ChatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_assistant_proto_msgTypes[0]
+	mi := &file_pkg_proto_assistant_v1_assistant_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *ChatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatRequest.ProtoReflect.Descriptor instead.
 func (*ChatRequest) Descriptor() ([]byte, []int) {
-	return file_assistant_proto_rawDescGZIP(), []int{0}
+	return file_pkg_proto_assistant_v1_assistant_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ChatRequest) GetSessionId() string {
@@ -93,7 +93,7 @@ type ChatResponse struct {
 
 func (x *ChatResponse) Reset() {
 	*x = ChatResponse{}
-	mi := &file_assistant_proto_msgTypes[1]
+	mi := &file_pkg_proto_assistant_v1_assistant_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -105,7 +105,7 @@ func (x *ChatResponse) String() string {
 func (*ChatResponse) ProtoMessage() {}
 
 func (x *ChatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_assistant_proto_msgTypes[1]
+	mi := &file_pkg_proto_assistant_v1_assistant_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -118,7 +118,7 @@ func (x *ChatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
 func (*ChatResponse) Descriptor() ([]byte, []int) {
-	return file_assistant_proto_rawDescGZIP(), []int{1}
+	return file_pkg_proto_assistant_v1_assistant_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ChatResponse) GetSessionId() string {
@@ -149,11 +149,11 @@ func (x *ChatResponse) GetIsFinal() bool {
 	return false
 }
 
-var File_assistant_proto protoreflect.FileDescriptor
+var File_pkg_proto_assistant_v1_assistant_proto protoreflect.FileDescriptor
 
-const file_assistant_proto_rawDesc = "" +
+const file_pkg_proto_assistant_v1_assistant_proto_rawDesc = "" +
 	"\n" +
-	"\x0fassistant.proto\x12\tassistant\"e\n" +
+	"&pkg/proto/assistant/v1/assistant.proto\x12\fassistant.v1\"e\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x18\n" +
@@ -166,30 +166,30 @@ const file_assistant_proto_rawDesc = "" +
 	"\rtext_response\x18\x02 \x01(\tR\ftextResponse\x12\x1d\n" +
 	"\n" +
 	"audio_data\x18\x03 \x01(\fR\taudioData\x12\x19\n" +
-	"\bis_final\x18\x04 \x01(\bR\aisFinal2O\n" +
-	"\x10AssistantService\x12;\n" +
-	"\x04Chat\x12\x16.assistant.ChatRequest\x1a\x17.assistant.ChatResponse(\x010\x01B/Z-github.com/evisdrenova/ember-server/pkg/protob\x06proto3"
+	"\bis_final\x18\x04 \x01(\bR\aisFinal2U\n" +
+	"\x10AssistantService\x12A\n" +
+	"\x04Chat\x12\x19.assistant.v1.ChatRequest\x1a\x1a.assistant.v1.ChatResponse(\x010\x01B/Z-github.com/evisdrenova/ember-server/pkg/protob\x06proto3"
 
 var (
-	file_assistant_proto_rawDescOnce sync.Once
-	file_assistant_proto_rawDescData []byte
+	file_pkg_proto_assistant_v1_assistant_proto_rawDescOnce sync.Once
+	file_pkg_proto_assistant_v1_assistant_proto_rawDescData []byte
 )
 
-func file_assistant_proto_rawDescGZIP() []byte {
-	file_assistant_proto_rawDescOnce.Do(func() {
-		file_assistant_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_assistant_proto_rawDesc), len(file_assistant_proto_rawDesc)))
+func file_pkg_proto_assistant_v1_assistant_proto_rawDescGZIP() []byte {
+	file_pkg_proto_assistant_v1_assistant_proto_rawDescOnce.Do(func() {
+		file_pkg_proto_assistant_v1_assistant_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkg_proto_assistant_v1_assistant_proto_rawDesc), len(file_pkg_proto_assistant_v1_assistant_proto_rawDesc)))
 	})
-	return file_assistant_proto_rawDescData
+	return file_pkg_proto_assistant_v1_assistant_proto_rawDescData
 }
 
-var file_assistant_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_assistant_proto_goTypes = []any{
-	(*ChatRequest)(nil),  // 0: assistant.ChatRequest
-	(*ChatResponse)(nil), // 1: assistant.ChatResponse
+var file_pkg_proto_assistant_v1_assistant_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_pkg_proto_assistant_v1_assistant_proto_goTypes = []any{
+	(*ChatRequest)(nil),  // 0: assistant.v1.ChatRequest
+	(*ChatResponse)(nil), // 1: assistant.v1.ChatResponse
 }
-var file_assistant_proto_depIdxs = []int32{
-	0, // 0: assistant.AssistantService.Chat:input_type -> assistant.ChatRequest
-	1, // 1: assistant.AssistantService.Chat:output_type -> assistant.ChatResponse
+var file_pkg_proto_assistant_v1_assistant_proto_depIdxs = []int32{
+	0, // 0: assistant.v1.AssistantService.Chat:input_type -> assistant.v1.ChatRequest
+	1, // 1: assistant.v1.AssistantService.Chat:output_type -> assistant.v1.ChatResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -197,26 +197,26 @@ var file_assistant_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_assistant_proto_init() }
-func file_assistant_proto_init() {
-	if File_assistant_proto != nil {
+func init() { file_pkg_proto_assistant_v1_assistant_proto_init() }
+func file_pkg_proto_assistant_v1_assistant_proto_init() {
+	if File_pkg_proto_assistant_v1_assistant_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_assistant_proto_rawDesc), len(file_assistant_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_assistant_v1_assistant_proto_rawDesc), len(file_pkg_proto_assistant_v1_assistant_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_assistant_proto_goTypes,
-		DependencyIndexes: file_assistant_proto_depIdxs,
-		MessageInfos:      file_assistant_proto_msgTypes,
+		GoTypes:           file_pkg_proto_assistant_v1_assistant_proto_goTypes,
+		DependencyIndexes: file_pkg_proto_assistant_v1_assistant_proto_depIdxs,
+		MessageInfos:      file_pkg_proto_assistant_v1_assistant_proto_msgTypes,
 	}.Build()
-	File_assistant_proto = out.File
-	file_assistant_proto_goTypes = nil
-	file_assistant_proto_depIdxs = nil
+	File_pkg_proto_assistant_v1_assistant_proto = out.File
+	file_pkg_proto_assistant_v1_assistant_proto_goTypes = nil
+	file_pkg_proto_assistant_v1_assistant_proto_depIdxs = nil
 }

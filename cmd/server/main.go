@@ -1,25 +1,4 @@
 // cmd/server/main.go
-// ------------------------------------------------------------------
-// Orange‑Pi Voice Assistant – Gateway Server (Go)
-// ------------------------------------------------------------------
-// Responsibilities:
-//   - Accept bidirectional gRPC stream from edge devices (Orange Pi)
-//   - Maintain session history in Redis
-//   - Call LLM backend and tool plugins
-//   - Stream neural‑TTS audio chunks back to the client
-//
-// Build:
-//
-//	go run ./cmd/server            # dev
-//	CGO_ENABLED=0 go build -o gateway ./cmd/server
-//
-// Env vars:
-//
-//	REDIS_ADDR   (default "localhost:6379")
-//	OPENAI_KEY   (optional)
-//	TTS_PROVIDER ("openai" | "elevenlabs" | "xtts")
-//
-// ------------------------------------------------------------------
 package main
 
 import (
@@ -27,33 +6,22 @@ import (
 	"net"
 	"os"
 
+	// Updated import path for the correctly generated files
+	pb "github.com/evisdrenova/ember-server/pkg/proto/assistant/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
+
+	"github.com/evisdrenova/ember-server/internal/handler"
 )
 
 func main() {
 	// ----------------------------------------------------------------
-	// 1. Configuration
-	// ----------------------------------------------------------------
-	// redisAddr := getenv("REDIS_ADDR", "localhost:6379")
-
-	// ----------------------------------------------------------------
-	// 2. External Clients (Redis, LLM/TTS soon)
-	// ----------------------------------------------------------------
-	// rdb := redis.NewClient(&redis.Options{
-	// 	Addr:         redisAddr,
-	// 	MinIdleConns: 4,
-	// })
-	// if _, err := rdb.Ping(context.Background()).Result(); err != nil {
-	// 	log.Fatalf("redis ping: %v", err)
-	// }
-
-	// ----------------------------------------------------------------
-	// 3. gRPC Server setup
+	// 1. gRPC Server setup
 	// ----------------------------------------------------------------
 	grpcOpts := []grpc.ServerOption{
-		grpc.MaxRecvMsgSize(10 << 20), // 10 MB
+		grpc.MaxRecvMsgSize(10 << 20), // 10 MB
 		grpc.MaxSendMsgSize(10 << 20),
 	}
 
@@ -72,18 +40,24 @@ func main() {
 	srv := grpc.NewServer(grpcOpts...)
 
 	// ----------------------------------------------------------------
-	// 4. Register service implementation
+	// 2. Register service implementation
 	// ----------------------------------------------------------------
-	// pb.RegisterAssistantServiceServer(srv, handler.NewChatHandler(rdb))
+	chatHandler := handler.NewChatHandler(nil)
+	pb.RegisterAssistantServiceServer(srv, chatHandler)
+
+	// Enable reflection for debugging
+	reflection.Register(srv)
+
+	log.Printf("✅ Registered AssistantService at assistant.v1.AssistantService")
 
 	// ----------------------------------------------------------------
-	// 5. Listen and serve
+	// 3. Listen and serve
 	// ----------------------------------------------------------------
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatalf("listen: %v", err)
 	}
-	log.Printf("🚀 gRPC Gateway listening on %s", ln.Addr())
+	log.Printf("🚀 gRPC Server listening on %s", ln.Addr())
 
 	if err := srv.Serve(ln); err != nil {
 		log.Fatalf("serve: %v", err)
