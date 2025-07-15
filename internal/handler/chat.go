@@ -42,7 +42,7 @@ func (h *ChatHandler) Chat(stream pb.AssistantService_ChatServer) error {
 
 		log.Printf("📨 Received message: session=%s, text='%s'", req.SessionId, req.Message)
 
-		// Store message in Redis (only if Redis client exists)
+		// Store message in Redis if exists
 		if h.rdb != nil && req.SessionId != "" && req.Message != "" {
 			key := "session:" + req.SessionId
 			if err := h.rdb.LPush(stream.Context(), key, req.Message).Err(); err != nil {
@@ -52,6 +52,7 @@ func (h *ChatHandler) Chat(stream pb.AssistantService_ChatServer) error {
 
 		chatCompletion, err := h.openaiClient.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
 			Messages: []openai.ChatCompletionMessageParamUnion{
+				openai.SystemMessage(systemPrompt),
 				openai.UserMessage("what dog shoud i get?"),
 			},
 			Model: openai.ChatModelGPT4o,
