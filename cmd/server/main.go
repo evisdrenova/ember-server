@@ -8,18 +8,26 @@ import (
 
 	// Updated import path for the correctly generated files
 	pb "github.com/evisdrenova/ember-server/pkg/proto/assistant/v1"
+	"github.com/joho/godotenv"
+	"github.com/openai/openai-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/evisdrenova/ember-server/internal/handler"
+	"github.com/openai/openai-go/option"
 )
 
 func main() {
-	// ----------------------------------------------------------------
-	// 1. gRPC Server setup
-	// ----------------------------------------------------------------
+
+	if err := godotenv.Load(); err != nil {
+		log.Printf("⚠️  No .env file found or error loading it: %v", err)
+		log.Printf("🔄 Continuing with system environment variables...")
+	} else {
+		log.Printf("✅ Loaded .env file successfully")
+	}
+
 	grpcOpts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(10 << 20), // 10 MB
 		grpc.MaxSendMsgSize(10 << 20),
@@ -39,10 +47,11 @@ func main() {
 
 	srv := grpc.NewServer(grpcOpts...)
 
-	// ----------------------------------------------------------------
-	// 2. Register service implementation
-	// ----------------------------------------------------------------
-	chatHandler := handler.NewChatHandler(nil)
+	openaiClient := openai.NewClient(
+		option.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+	)
+
+	chatHandler := handler.NewChatHandler(nil, &openaiClient)
 	pb.RegisterAssistantServiceServer(srv, chatHandler)
 
 	// Enable reflection for debugging
@@ -50,9 +59,6 @@ func main() {
 
 	log.Printf("✅ Registered AssistantService at assistant.v1.AssistantService")
 
-	// ----------------------------------------------------------------
-	// 3. Listen and serve
-	// ----------------------------------------------------------------
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatalf("listen: %v", err)

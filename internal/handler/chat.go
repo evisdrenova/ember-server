@@ -7,6 +7,7 @@ import (
 	"log"
 
 	pb "github.com/evisdrenova/ember-server/pkg/proto/assistant/v1"
+	"github.com/openai/openai-go"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,12 +15,14 @@ import (
 
 type ChatHandler struct {
 	pb.UnimplementedAssistantServiceServer
-	rdb *redis.Client
+	rdb          *redis.Client
+	openaiClient *openai.Client
 }
 
-func NewChatHandler(rdb *redis.Client) *ChatHandler {
+func NewChatHandler(rdb *redis.Client, openaiClient *openai.Client) *ChatHandler {
 	return &ChatHandler{
-		rdb: rdb,
+		rdb:          rdb,
+		openaiClient: openaiClient,
 	}
 }
 
