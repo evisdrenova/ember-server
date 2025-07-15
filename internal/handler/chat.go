@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -49,10 +50,21 @@ func (h *ChatHandler) Chat(stream pb.AssistantService_ChatServer) error {
 			}
 		}
 
+		chatCompletion, err := h.openaiClient.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+			Messages: []openai.ChatCompletionMessageParamUnion{
+				openai.UserMessage("what dog shoud i get?"),
+			},
+			Model: openai.ChatModelGPT4o,
+		})
+		if err != nil {
+			panic(err.Error())
+		}
+		println(chatCompletion.Choices[0].Message.Content)
+
 		// Echo response for now
 		resp := &pb.ChatResponse{
 			SessionId:    req.SessionId,
-			TextResponse: "Echo: " + req.Message,
+			TextResponse: chatCompletion.Choices[0].Message.Content,
 			IsFinal:      true,
 		}
 
