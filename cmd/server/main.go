@@ -2,12 +2,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
 
 	// Updated import path for the correctly generated files
 	pb "github.com/evisdrenova/ember-server/pkg/proto/assistant/v1"
+	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/openai/openai-go"
 	"google.golang.org/grpc"
@@ -22,8 +25,7 @@ import (
 func main() {
 
 	if err := godotenv.Load(); err != nil {
-		log.Printf("⚠️  No .env file found or error loading it: %v", err)
-		log.Printf("🔄 Continuing with system environment variables...")
+		log.Printf("No .env file found or error loading it: %v", err)
 	} else {
 		log.Printf("✅ Loaded .env file successfully")
 	}
@@ -51,13 +53,20 @@ func main() {
 		option.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
 	)
 
-	chatHandler := handler.NewChatHandler(nil, &openaiClient)
+	url := os.Getenv("SUPABASE_DB_URL")
+	conn, err := pgx.Connect(context.Background(), url)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(context.Background())
+
+	ctx := context.Background()
+
+	chatHandler := handler.NewChatHandler(ctx, &openaiClient, conn)
 	pb.RegisterAssistantServiceServer(srv, chatHandler)
 
-	// Enable reflection for debugging
 	reflection.Register(srv)
-
-	log.Printf("✅ Registered AssistantService at assistant.v1.AssistantService")
 
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
