@@ -53,7 +53,7 @@ func NewChatHandler(ctx context.Context, openaiClient *openai.Client, db_conn *p
 	}
 
 	// Start cleanup routine for old sessions
-	go handler.cleanupOldSessions()
+	// go handler.cleanupOldSessions()
 
 	log.Printf("✅ Chat handler initialized")
 	return handler
