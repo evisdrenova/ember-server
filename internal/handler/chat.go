@@ -10,7 +10,7 @@ import (
 	"time"
 
 	pb "github.com/evisdrenova/ember-server/pkg/proto/assistant/v1"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/openai/openai-go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,7 +19,7 @@ import (
 type ChatHandler struct {
 	pb.UnimplementedAssistantServiceServer
 	openaiClient *openai.Client
-	db_conn      *pgx.Conn
+	db_conn      *pgxpool.Pool
 	sessions     map[string]*ConversationSession
 }
 
@@ -45,7 +45,7 @@ type ConversationMessage struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
-func NewChatHandler(ctx context.Context, openaiClient *openai.Client, db_conn *pgx.Conn) *ChatHandler {
+func NewChatHandler(ctx context.Context, openaiClient *openai.Client, db_conn *pgxpool.Pool) *ChatHandler {
 	handler := &ChatHandler{
 		openaiClient: openaiClient,
 		db_conn:      db_conn,
@@ -119,6 +119,10 @@ func (h *ChatHandler) Chat(stream pb.AssistantService_ChatServer) error {
 		}
 
 		choice := chatCompletion.Choices[0]
+		log.Printf("🔍 Tool calls received: %d", len(choice.Message.ToolCalls)) // Add this line
+		for i, toolCall := range choice.Message.ToolCalls {
+			log.Printf("🔍 Tool call %d: %s with args: %s", i, toolCall.Function.Name, toolCall.Function.Arguments)
+		}
 		responseContent := ""
 
 		// Handle tool calls if present
@@ -324,15 +328,8 @@ func (h *ChatHandler) handleSaveMemoryTool(ctx context.Context, argumentsJSON st
 
 	log.Printf("💾 Saving memory: %s", args.Memory)
 
-	// Generate a simple embedding (you can replace this with actual embeddings later)
-	// For now, just create a placeholder embedding
-	embedding := make([]float32, 768)
-	for i := range embedding {
-		embedding[i] = 0.0 // Placeholder - replace with real embeddings
-	}
-
 	// Save to database
-	err := h.saveMemory(ctx, args.Memory, embedding)
+	err := h.saveMemory(ctx, args.Memory)
 	if err != nil {
 		return "", fmt.Errorf("failed to save memory: %v", err)
 	}
@@ -348,11 +345,11 @@ func (h *ChatHandler) saveMessage(ctx context.Context, sessionId, role, content 
 	return err
 }
 
-func (h *ChatHandler) saveMemory(ctx context.Context, text string, embedding []float32) error {
+func (h *ChatHandler) saveMemory(ctx context.Context, text string) error {
 	_, err := h.db_conn.Exec(ctx, `
-		INSERT INTO memories (memory, embedding) 
-		VALUES ($1, $2)
-	`, text, embedding)
+		INSERT INTO memories (memory) 
+		VALUES ($1)
+	`, text)
 	return err
 }
 
