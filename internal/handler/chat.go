@@ -98,13 +98,13 @@ func (h *ChatHandler) Chat(stream pb.AssistantService_ChatServer) error {
 				{
 					Function: openai.FunctionDefinitionParam{
 						Name:        "save_memory",
-						Description: openai.String("Save important personal infor		mation or facts about the user for future reference. Only use this for significant personal details like preferences, important dates, family information, or other facts that would be useful to remember in future conversations."),
+						Description: openai.String("Save personal information about the user that would be helpful to remember in future conversations. This includes: location/address, preferences, family details, important dates, interests, or any personal facts the user shares. Use this whenever the user mentions something personal about themselves."),
 						Parameters: openai.FunctionParameters{
 							"type": "object",
 							"properties": map[string]interface{}{
 								"memory": map[string]interface{}{
 									"type":        "string",
-									"description": "The personal fact or information to remember about the user",
+									"description": "The personal information to remember about the user. Be specific and include context.",
 								},
 							},
 							"required": []string{"memory"},
@@ -408,6 +408,11 @@ CORE PRINCIPLES
 – Speak, don't write. Use everyday speech and contractions.
 – Keep the answer short enough to say in under thirty seconds, roughly 75–100 words.
 – Be friendly and clear, never robotic or overly casual.
+
+MEMORY MANAGEMENT
+When users share personal information (location, preferences, family details, etc.), 
+always save it using the save_memory tool. This helps provide better personalized 
+responses in future conversations.
 
 CONCISENESS
 Give only the information the listener needs right now. Offer more detail only if
