@@ -98,7 +98,7 @@ func (h *ChatHandler) Chat(stream pb.AssistantService_ChatServer) error {
 				{
 					Function: openai.FunctionDefinitionParam{
 						Name:        "save_memory",
-						Description: openai.String("Save important personal information or facts about the user for future reference. Only use this for significant personal details like preferences, important dates, family information, or other facts that would be useful to remember in future conversations."),
+						Description: openai.String("Save important personal infor		mation or facts about the user for future reference. Only use this for significant personal details like preferences, important dates, family information, or other facts that would be useful to remember in future conversations."),
 						Parameters: openai.FunctionParameters{
 							"type": "object",
 							"properties": map[string]interface{}{
