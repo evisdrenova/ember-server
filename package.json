@@ -1,0 +1,47 @@
+{
+  "name": "ember-server",
+  "version": "1.0.0",
+  "description": "TypeScript gRPC server for Ember assistant",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "watch": "ts-node --watch src/server.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.6",
+    "@grpc/proto-loader": "^0.7.13",
+    "dotenv": "^16.4.5",
+    "openai": "^4.52.1",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/pg": "^8.11.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "grpc",
+    "typescript",
+    "openai",
+    "assistant",
+    "voice"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evisdrenova/ember-server.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/evisdrenova/ember-server/issues"
+  },
+  "homepage": "https://github.com/evisdrenova/ember-server#readme"
+}
