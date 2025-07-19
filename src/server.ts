@@ -113,8 +113,6 @@ async function main() {
       console.error("❌ Failed to bind server:", error);
       process.exit(1);
     }
-
-    server.start();
     console.log(`🚀 gRPC Server listening on ${bindAddress}`);
   });
 

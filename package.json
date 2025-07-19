@@ -15,11 +15,13 @@
     "@grpc/proto-loader": "^0.7.13",
     "dotenv": "^16.4.5",
     "openai": "^4.52.1",
-    "pg": "^8.11.5"
+    "pg": "^8.11.5",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@types/pg": "^8.11.6",
+    "@types/uuid": "^10.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },

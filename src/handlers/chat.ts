@@ -6,6 +6,7 @@ import {
   ResponseInput,
   ResponseInputItem,
 } from "openai/resources/responses/responses";
+import { v7 as uuidv7 } from "uuid";
 
 interface Memory {
   id: string;
@@ -52,12 +53,10 @@ export default class ChatHandler {
   }
 
   async chat(call: grpc.ServerDuplexStream<ChatRequest, ChatResponse>) {
-    console.log("📞 New chat stream opened");
-
     call.on("data", async (request: ChatRequest) => {
       try {
         console.log(
-          `📨 Received message: session=${request.sessionId}, text='${request.message}'`
+          `Received message from pi: session=${request.sessionId}, text='${request.message}'`
         );
 
         const session = await this.getOrCreateSession(request.sessionId);
@@ -66,10 +65,12 @@ export default class ChatHandler {
           role: "user",
           content: request.message,
         };
+
         session.messages.push(userMessage);
         session.lastActivity = new Date();
 
-        await this.saveMessage(request.sessionId, "user", request.message);
+        // save user message
+        await this.saveMessage(session.sessionId, "user", request.message);
 
         const response = await this.openaiClient.responses.create({
           input: session.messages,
@@ -79,7 +80,7 @@ export default class ChatHandler {
             {
               type: "function",
               name: "save_memory",
-              strict: true,
+              strict: false,
               description:
                 "Save personal information about the user that would be helpful to remember in future conversations. This includes: location/address, preferences, family details, important dates, interests, or any personal facts the user shares. Use this whenever the user mentions something personal about themselves.",
               parameters: {
@@ -94,14 +95,16 @@ export default class ChatHandler {
                 required: ["memory"],
               },
             },
-            {
-              type: "mcp",
-              server_label: "deepwiki",
-              server_url: "https://mcp.deepwiki.com/mcp",
-              require_approval: "never",
-            },
+            // {
+            //   type: "mcp",
+            //   server_label: "deepwiki",
+            //   server_url: "https://mcp.deepwiki.com/mcp",
+            //   require_approval: "never",
+            // },
           ],
         });
+
+        console.log("response from llm ", response.output);
 
         const tools = response && response.tools;
 
@@ -169,20 +172,19 @@ export default class ChatHandler {
   private async getOrCreateSession(
     sessionId: string
   ): Promise<ConversationSession> {
+    // early return if the session doesn't exist
+    if (!sessionId) {
+      const session = await this.createNewSession();
+      this.sessions.set(sessionId, session);
+      return session;
+    }
+
     // Check if session exists in memory
     if (this.sessions.has(sessionId)) {
       return this.sessions.get(sessionId)!;
-    }
-
-    // Try to load from database
-    try {
+    } else {
+      // try to pull from db
       const session = await this.loadSessionFromDB(sessionId);
-      this.sessions.set(sessionId, session);
-      return session;
-    } catch (error) {
-      console.log("Failed to load session from DB:", error);
-      // Create new session if loading fails
-      const session = await this.createNewSession(sessionId);
       this.sessions.set(sessionId, session);
       return session;
     }
@@ -239,21 +241,24 @@ export default class ChatHandler {
     }
   }
 
-  private async createNewSession(
-    sessionId: string
-  ): Promise<ConversationSession> {
+  private generateSessionId(): string {
+    return uuidv7();
+  }
+
+  private async createNewSession(): Promise<ConversationSession> {
     // Construct system prompt with memories
     const systemPrompt = await this.constructSystemPromptWithMemories();
 
+    const newSessionId = this.generateSessionId();
+
     const session: ConversationSession = {
-      sessionId,
+      sessionId: newSessionId,
       messages: [{ role: "system", content: systemPrompt }],
       createdAt: new Date(),
       lastActivity: new Date(),
     };
 
-    // Save system message to database
-    await this.saveMessage(sessionId, "system", systemPrompt);
+    await this.saveMessage(newSessionId, "system", systemPrompt);
 
     return session;
   }
