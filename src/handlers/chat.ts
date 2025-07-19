@@ -41,6 +41,76 @@ interface ChatResponse {
   isFinal: boolean;
 }
 
+interface WeatherResponse {
+  current: {
+    time: string;
+    interval: number;
+    temperature_2m: number;
+    wind_speed_10m: number;
+  };
+  current_units: {
+    time: string;
+    interval: string;
+    temperature_2m: string;
+    wind_speed_10m: string;
+  };
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    relative_humidity_2m: number[];
+    wind_speed_10m: number[];
+  };
+  hourly_units: {
+    time: string;
+    temperature_2m: string;
+    relative_humidity_2m: string;
+    wind_speed_10m: string;
+  };
+}
+
+const tools: OpenAI.Responses.Tool[] = [
+  {
+    type: "function",
+    name: "save_memory",
+    strict: false,
+    description:
+      "Save personal information about the user that would be helpful to remember in future conversations. This includes: location/address, preferences, family details, important dates, interests, or any personal facts the user shares. Use this whenever the user mentions something personal about themselves.",
+    parameters: {
+      type: "object",
+      properties: {
+        memory: {
+          type: "string",
+          description:
+            "The personal information to remember about the user. Be specific and include context.",
+        },
+      },
+      required: ["memory"],
+    },
+  },
+  {
+    type: "function",
+    name: "get_weather",
+    description:
+      "Get current temperature for provided coordinates in fahrenheit.",
+    parameters: {
+      type: "object",
+      properties: {
+        latitude: { type: "number" },
+        longitude: { type: "number" },
+      },
+      required: ["latitude", "longitude"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  // {
+  //   type: "mcp",
+  //   server_label: "deepwiki",
+  //   server_url: "https://mcp.deepwiki.com/mcp",
+  //   require_approval: "never",
+  // },
+];
+
 export default class ChatHandler {
   private openaiClient: OpenAI;
   private dbPool: Pool;
@@ -76,59 +146,67 @@ export default class ChatHandler {
           input: session.messages,
           instructions: this.getDefaultSystemPrompt(),
           model: "gpt-4o",
-          tools: [
-            {
-              type: "function",
-              name: "save_memory",
-              strict: false,
-              description:
-                "Save personal information about the user that would be helpful to remember in future conversations. This includes: location/address, preferences, family details, important dates, interests, or any personal facts the user shares. Use this whenever the user mentions something personal about themselves.",
-              parameters: {
-                type: "object",
-                properties: {
-                  memory: {
-                    type: "string",
-                    description:
-                      "The personal information to remember about the user. Be specific and include context.",
-                  },
-                },
-                required: ["memory"],
-              },
-            },
-            // {
-            //   type: "mcp",
-            //   server_label: "deepwiki",
-            //   server_url: "https://mcp.deepwiki.com/mcp",
-            //   require_approval: "never",
-            // },
-          ],
+          tools,
         });
 
+        // the entire output
         console.log("response from llm ", response.output);
+        // hjust the text output
+        console.log("output_text", response.output_text);
+        // how the model should seelct the tool
+        console.log(
+          "response && response.output[0] ",
+          response && response.output[0]
+        );
 
-        const tools = response && response.tools;
-
-        if (tools) {
-          tools?.forEach((toolCall, i) => {
-            console.log(`🔍 Tool call ${i}: ${toolCall.type}`);
-          });
-        }
+        // if (response.output) {
+        //   response.tools?.forEach((toolCall, i) => {
+        //     console.log(`🔍 Tool call ${i}: ${toolCall.type}`);
+        //   });
+        // }
 
         // Handle tool calls if present
-        if (tools && tools.length > 0) {
+        if (response.output && response.output.length > 0) {
           // Process each tool call
-          for (const toolCall of tools) {
-            if (
-              toolCall.type == "function" &&
-              toolCall.name === "save_memory"
-            ) {
-              await this.handleSaveMemoryTool(toolCall.parameters);
+          for (const res of response.output) {
+            if (res.type == "function_call") {
+              switch (res.name) {
+                case "save_memory":
+                  console.log(`saving memory`);
+                  await this.handleSaveMemoryTool(JSON.parse(res.arguments));
+                  break;
+                case "get_weather":
+                  const args = JSON.parse(res.arguments);
+                  console.log(`gettng weather`, args);
+                  const weather = await this.getWeather(
+                    args.latitude,
+                    args.longitude
+                  );
+                  // push back into the messages to send back to model
+                  session.messages.push(res);
+                  session.messages.push({
+                    type: "function_call_output",
+                    call_id: res.call_id,
+                    output: weather,
+                  });
+                  break;
+                default:
+                  console.log(`Unknown function call: ${res.name}`);
+                  break;
+              }
             }
           }
         }
 
+        const updatedResponse = await this.openaiClient.responses.create({
+          input: session.messages,
+          instructions: this.getDefaultSystemPrompt(),
+          model: "gpt-4o",
+          tools,
+        });
+
         // Get the text content from the response
-        const responseContent = response.output_text;
+        const responseContent = updatedResponse.output_text;
 
         // Add final assistant response to session
         if (responseContent) {
@@ -139,10 +217,10 @@ export default class ChatHandler {
         }
 
         // Save assistant message to database
-        await this.saveMessage(request.sessionId, "assistant", responseContent);
+        await this.saveMessage(session.sessionId, "assistant", responseContent);
 
         const chatResponse: ChatResponse = {
-          sessionId: request.sessionId,
+          sessionId: session.sessionId,
           textResponse: responseContent,
           isFinal: true,
         };
@@ -167,6 +245,43 @@ export default class ChatHandler {
     call.on("error", (error) => {
       console.error("❌ Chat stream error:", error);
     });
+  }
+
+  private async getWeather(
+    latitude: number,
+    longitude: number
+  ): Promise<string> {
+    try {
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Weather API request failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = (await response.json()) as WeatherResponse;
+
+      if (!data.current || typeof data.current.temperature_2m !== "number") {
+        throw new Error("Invalid weather data received");
+      }
+
+      const temperature = data.current.temperature_2m;
+      const windSpeed = data.current.wind_speed_10m;
+      const tempUnit = data.current_units.temperature_2m;
+      const windUnit = data.current_units.wind_speed_10m;
+
+      return `Current weather: ${temperature}${tempUnit}, wind speed ${windSpeed} ${windUnit}`;
+    } catch (error) {
+      console.error("Failed to fetch weather data:", error);
+      throw new Error(
+        `Unable to fetch weather data: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
   private async getOrCreateSession(
