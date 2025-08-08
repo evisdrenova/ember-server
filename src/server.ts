@@ -31,10 +31,7 @@ async function main() {
   }
 
   // Load the protobuf definition
-  const PROTO_PATH = resolve(
-    __dirname,
-    "../proto/assistant/v1/assistant.proto"
-  );
+  const PROTO_PATH = resolve(__dirname, "../proto/assistant.proto");
   const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
     keepCase: true,
     longs: String,
