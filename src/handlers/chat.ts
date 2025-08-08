@@ -111,6 +111,8 @@ const tools: OpenAI.Responses.Tool[] = [
   // },
 ];
 
+//TODO: try making this a unary call both ways and then update to streaming later
+
 export default class ChatHandler {
   private openaiClient: OpenAI;
   private dbPool: Pool;
@@ -228,6 +230,7 @@ export default class ChatHandler {
         console.log(`📤 Sending response: '${chatResponse.textResponse}'`);
 
         call.write(chatResponse);
+        call.end();
       } catch (error) {
         console.error("❌ Error processing chat message:", error);
         call.emit("error", {
@@ -237,10 +240,10 @@ export default class ChatHandler {
       }
     });
 
-    call.on("end", () => {
-      console.log("📞 Chat stream ended");
-      call.end();
-    });
+    // call.on("end", () => {
+    //   console.log("📞 Chat stream ended");
+    //   call.end();
+    // });
 
     call.on("error", (error) => {
       console.error("❌ Chat stream error:", error);
