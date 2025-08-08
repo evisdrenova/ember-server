@@ -124,130 +124,175 @@ export default class ChatHandler {
     console.log("Chat handler initialized");
   }
 
-  async chat(call: grpc.ServerDuplexStream<ChatRequest, ChatResponse>) {
-    call.on("data", async (request: ChatRequest) => {
-      try {
-        console.log(
-          `Received message from pi: session=${request.sessionId}, text='${request.message}'`
-        );
+  // async chat(call: grpc.ServerDuplexStream<ChatRequest, ChatResponse>) {
+  //   call.on("data", async (request: ChatRequest) => {
 
-        const session = await this.getOrCreateSession(request.sessionId);
+  //     try {
 
-        const userMessage: ResponseInputItem = {
-          role: "user",
-          content: request.message,
-        };
+  //       console.log(
+  //         `Received message from pi: session=${request.sessionId}, text='${request.message}'`
+  //       );
 
-        session.messages.push(userMessage);
-        session.lastActivity = new Date();
+  //       const session = await this.getOrCreateSession(request.sessionId);
 
-        // save user message
-        await this.saveMessage(session.sessionId, "user", request.message);
+  //       const userMessage: ResponseInputItem = {
+  //         role: "user",
+  //         content: request.message,
+  //       };
 
-        const response = await this.openaiClient.responses.create({
-          input: session.messages,
-          instructions: this.getDefaultSystemPrompt(),
-          model: "gpt-4o",
-          tools,
-        });
+  //       session.messages.push(userMessage);
+  //       session.lastActivity = new Date();
 
-        // the entire output
-        console.log("response from llm ", response.output);
-        // hjust the text output
-        console.log("output_text", response.output_text);
-        // how the model should seelct the tool
-        console.log(
-          "response && response.output[0] ",
-          response && response.output[0]
-        );
+  //       // save user message
+  //       await this.saveMessage(session.sessionId, "user", request.message);
 
-        // if (response.output) {
-        //   response.tools?.forEach((toolCall, i) => {
-        //     console.log(`🔍 Tool call ${i}: ${toolCall.type}`);
-        //   });
-        // }
+  //       const response = await this.openaiClient.responses.create({
+  //         input: session.messages,
+  //         instructions: this.getDefaultSystemPrompt(),
+  //         model: "gpt-4o",
+  //         tools,
+  //       });
 
-        // Handle tool calls if present
-        if (response.output && response.output.length > 0) {
-          // Process each tool call
-          for (const res of response.output) {
-            if (res.type == "function_call") {
-              switch (res.name) {
-                case "save_memory":
-                  console.log(`saving memory`);
-                  await this.handleSaveMemoryTool(JSON.parse(res.arguments));
-                  break;
-                case "get_weather":
-                  const args = JSON.parse(res.arguments);
-                  console.log(`gettng weather`, args);
-                  const weather = await this.getWeather(
-                    args.latitude,
-                    args.longitude
-                  );
-                  // push back into the messages to send back to model
-                  session.messages.push(res);
-                  session.messages.push({
-                    type: "function_call_output",
-                    call_id: res.call_id,
-                    output: weather,
-                  });
-                  break;
-                default:
-                  console.log(`Unknown function call: ${res.name}`);
-                  break;
-              }
-            }
-          }
-        }
+  //       // the entire output
+  //       console.log("response from llm ", response.output);
+  //       // hjust the text output
+  //       console.log("output_text", response.output_text);
+  //       // how the model should seelct the tool
+  //       console.log(
+  //         "response && response.output[0] ",
+  //         response && response.output[0]
+  //       );
 
-        const updatedResponse = await this.openaiClient.responses.create({
-          input: session.messages,
-          instructions: this.getDefaultSystemPrompt(),
-          model: "gpt-4o",
-          tools,
-        });
+  //       // if (response.output) {
+  //       //   response.tools?.forEach((toolCall, i) => {
+  //       //     console.log(`🔍 Tool call ${i}: ${toolCall.type}`);
+  //       //   });
+  //       // }
 
-        // Get the text content from the response
-        const responseContent = updatedResponse.output_text;
+  //       // Handle tool calls if present
+  //       if (response.output && response.output.length > 0) {
+  //         // Process each tool call
+  //         for (const res of response.output) {
+  //           if (res.type == "function_call") {
+  //             switch (res.name) {
+  //               case "save_memory":
+  //                 console.log(`saving memory`);
+  //                 await this.handleSaveMemoryTool(JSON.parse(res.arguments));
+  //                 break;
+  //               case "get_weather":
+  //                 const args = JSON.parse(res.arguments);
+  //                 console.log(`gettng weather`, args);
+  //                 const weather = await this.getWeather(
+  //                   args.latitude,
+  //                   args.longitude
+  //                 );
+  //                 // push back into the messages to send back to model
+  //                 session.messages.push(res);
+  //                 session.messages.push({
+  //                   type: "function_call_output",
+  //                   call_id: res.call_id,
+  //                   output: weather,
+  //                 });
+  //                 break;
+  //               default:
+  //                 console.log(`Unknown function call: ${res.name}`);
+  //                 break;
+  //             }
+  //           }
+  //         }
+  //       }
 
-        // Add final assistant response to session
-        if (responseContent) {
-          session.messages.push({
-            role: "assistant",
-            content: responseContent,
-          });
-        }
+  //       const updatedResponse = await this.openaiClient.responses.create({
+  //         input: session.messages,
+  //         instructions: this.getDefaultSystemPrompt(),
+  //         model: "gpt-4o",
+  //         tools,
+  //       });
 
-        // Save assistant message to database
-        await this.saveMessage(session.sessionId, "assistant", responseContent);
+  //       // Get the text content from the response
+  //       const responseContent = updatedResponse.output_text;
 
-        const chatResponse: ChatResponse = {
-          sessionId: session.sessionId,
-          textResponse: responseContent,
-          isFinal: true,
-        };
+  //       // Add final assistant response to session
+  //       if (responseContent) {
+  //         session.messages.push({
+  //           role: "assistant",
+  //           content: responseContent,
+  //         });
+  //       }
 
-        console.log(`📤 Sending response: '${chatResponse.textResponse}'`);
+  //       // Save assistant message to database
+  //       await this.saveMessage(session.sessionId, "assistant", responseContent);
 
-        call.write(chatResponse);
+  //       const chatResponse: ChatResponse = {
+  //         sessionId: session.sessionId,
+  //         textResponse: responseContent,
+  //         isFinal: true,
+  //       };
+
+  //       console.log(`📤 Sending response: '${chatResponse.textResponse}'`);
+
+  //       call.write(chatResponse);
+  //       call.end();
+  //     } catch (error) {
+  //       console.error("❌ Error processing chat message:", error);
+  //       call.emit("error", {
+  //         code: grpc.status.INTERNAL,
+  //         message: `Internal error: ${error}`,
+  //       });
+  //     }
+  //   });
+
+  //   // call.on("end", () => {
+  //   //   console.log("📞 Chat stream ended");
+  //   //   call.end();
+  //   // });
+
+  //   call.on("error", (error) => {
+  //     console.error("❌ Chat stream error:", error);
+  //   });
+  // }
+  async chat(call: grpc.ServerWritableStream<ChatRequest, ChatResponse>) {
+    try {
+      const { sessionId, message } = call.request;
+
+      const stream = await this.openaiClient.responses.stream({
+        model: "gpt-4o",
+        input: [{ role: "user", content: message }],
+        instructions: this.getDefaultSystemPrompt(),
+        tools,
+      });
+
+      let finalText = "";
+
+      // token deltas
+      stream.on("response.output_text.delta", (delta) => {
+        finalText += delta;
+        call.write({ sessionId, textResponse: delta.delta, isFinal: false });
+      });
+
+      // final text (per OutputText tool)
+      stream.on("response.output_text.done", () => {
+        // optional: nothing needed here if you also send on 'response.completed'
+      });
+
+      // entire response finished
+      stream.on("response.completed", () => {
+        call.write({ sessionId, textResponse: finalText, isFinal: true });
         call.end();
-      } catch (error) {
-        console.error("❌ Error processing chat message:", error);
-        call.emit("error", {
-          code: grpc.status.INTERNAL,
-          message: `Internal error: ${error}`,
-        });
-      }
-    });
+      });
 
-    // call.on("end", () => {
-    //   console.log("📞 Chat stream ended");
-    //   call.end();
-    // });
+      // errors
+      stream.on("response.failed", (err: unknown) => {
+        console.error("OpenAI stream error:", err);
+        call.destroy(err as any);
+      });
 
-    call.on("error", (error) => {
-      console.error("❌ Chat stream error:", error);
-    });
+      // make sure we await the stream lifecycle so it doesn’t get GC’d early
+      await stream.done();
+    } catch (err) {
+      console.error("❌ Chat handler error:", err);
+      call.destroy(err as any);
+    }
   }
 
   private async getWeather(
