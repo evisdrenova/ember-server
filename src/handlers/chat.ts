@@ -251,6 +251,50 @@ export default class ChatHandler {
   //     console.error("❌ Chat stream error:", error);
   //   });
   // }
+  // async chat(call: grpc.ServerWritableStream<ChatRequest, ChatResponse>) {
+  //   try {
+  //     const { sessionId, message } = call.request;
+
+  //     const stream = await this.openaiClient.responses.stream({
+  //       model: "gpt-4o",
+  //       input: [{ role: "user", content: message }],
+  //       instructions: this.getDefaultSystemPrompt(),
+  //       tools,
+  //     });
+
+  //     let finalText = "";
+
+  //     // token deltas
+  //     stream.on("response.output_text.delta", (delta) => {
+  //       finalText += delta;
+  //       call.write({ sessionId, textResponse: delta.delta, isFinal: false });
+  //     });
+
+  //     // final text (per OutputText tool)
+  //     stream.on("response.output_text.done", () => {
+  //       // optional: nothing needed here if you also send on 'response.completed'
+  //     });
+
+  //     // entire response finished
+  //     stream.on("response.completed", () => {
+  //       call.write({ sessionId, textResponse: finalText, isFinal: true });
+  //       call.end();
+  //     });
+
+  //     // errors
+  //     stream.on("response.failed", (err: unknown) => {
+  //       console.error("OpenAI stream error:", err);
+  //       call.destroy(err as any);
+  //     });
+
+  //     // make sure we await the stream lifecycle so it doesn’t get GC’d early
+  //     await stream.done();
+  //   } catch (err) {
+  //     console.error("❌ Chat handler error:", err);
+  //     call.destroy(err as any);
+  //   }
+  // }
+
   async chat(call: grpc.ServerWritableStream<ChatRequest, ChatResponse>) {
     try {
       const { sessionId, message } = call.request;
@@ -262,32 +306,28 @@ export default class ChatHandler {
         tools,
       });
 
-      let finalText = "";
+      let completeText = "";
 
-      // token deltas
+      // Collect all text chunks
       stream.on("response.output_text.delta", (delta) => {
-        finalText += delta;
-        call.write({ sessionId, textResponse: delta.delta, isFinal: false });
+        completeText += delta;
       });
 
-      // final text (per OutputText tool)
-      stream.on("response.output_text.done", () => {
-        // optional: nothing needed here if you also send on 'response.completed'
-      });
-
-      // entire response finished
+      // Send complete response when done
       stream.on("response.completed", () => {
-        call.write({ sessionId, textResponse: finalText, isFinal: true });
+        call.write({
+          sessionId,
+          textResponse: completeText,
+          isFinal: true,
+        });
         call.end();
       });
 
-      // errors
       stream.on("response.failed", (err: unknown) => {
         console.error("OpenAI stream error:", err);
         call.destroy(err as any);
       });
 
-      // make sure we await the stream lifecycle so it doesn’t get GC’d early
       await stream.done();
     } catch (err) {
       console.error("❌ Chat handler error:", err);
