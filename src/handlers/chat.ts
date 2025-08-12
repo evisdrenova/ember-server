@@ -313,6 +313,8 @@ export default class ChatHandler {
         completeText += delta;
       });
 
+      console.log("completeText", completeText);
+
       // Send complete response when done
       stream.on("response.completed", () => {
         call.write({
