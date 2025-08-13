@@ -336,7 +336,6 @@ export default class ChatHandler {
             break;
 
           default:
-            // ignore other event types
             break;
         }
       }
