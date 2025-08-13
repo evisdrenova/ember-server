@@ -308,29 +308,44 @@ export default class ChatHandler {
 
       let completeText = "";
 
-      // Collect all text chunks
-      stream.on("response.output_text.delta", (delta) => {
-        completeText += delta;
-      });
+      for await (const evt of stream) {
+        switch (evt.type) {
+          case "response.output_text.delta":
+            // this is a string chunk
+            completeText += evt.delta;
+            break;
 
-      console.log("completeText", completeText);
+          case "response.completed":
+            call.write({
+              sessionId,
+              textResponse: completeText,
+              isFinal: true,
+            });
+            call.end();
+            break;
 
-      // Send complete response when done
-      stream.on("response.completed", () => {
-        call.write({
-          sessionId,
-          textResponse: completeText,
-          isFinal: true,
-        });
+          case "response.failed":
+            console.error("OpenAI stream error:", evt);
+            call.destroy(
+              new Error(
+                typeof (evt as any).error === "string"
+                  ? (evt as any).error
+                  : JSON.stringify(evt)
+              )
+            );
+            break;
+
+          default:
+            // ignore other event types
+            break;
+        }
+      }
+
+      // Safety: if the stream finished without emitting response.completed
+      if (completeText && !call.closed) {
+        call.write({ sessionId, textResponse: completeText, isFinal: true });
         call.end();
-      });
-
-      stream.on("response.failed", (err: unknown) => {
-        console.error("OpenAI stream error:", err);
-        call.destroy(err as any);
-      });
-
-      await stream.done();
+      }
     } catch (err) {
       console.error("❌ Chat handler error:", err);
       call.destroy(err as any);
